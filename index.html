@@ -1,0 +1,1019 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Winneram — Driver Check-In</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  :root {
+    --brand: #7a0a0a; --brand-dark: #5a0606; --gold: #c9a84c;
+    --white: #ffffff; --off-white: #faf8f5; --light-gray: #f0ece6;
+    --mid-gray: #d4ccc2; --text: #2a1a1a; --text-muted: #7a6a6a;
+    --success: #1a7a3a; --success-bg: #edf7f1;
+    --radius: 16px; --radius-sm: 10px;
+  }
+  body { font-family: 'Barlow', sans-serif; background: var(--off-white); min-height: 100vh; display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+
+  .header { width: 100%; background: var(--brand); padding: 18px 32px; display: flex; align-items: center; gap: 16px; box-shadow: 0 3px 12px rgba(122,10,10,0.3); }
+  .header img { width: 60px; height: 60px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); }
+  .header-text h1 { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 700; color: #fff; letter-spacing: 1px; text-transform: uppercase; }
+  .header-text p { font-size: 12px; color: rgba(255,255,255,0.65); letter-spacing: 0.5px; margin-top: 2px; }
+  .header-time { margin-left: auto; text-align: right; color: rgba(255,255,255,0.85); }
+  .header-time .time { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 600; letter-spacing: 1px; }
+  .header-time .date { font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px; }
+
+  .main { width: 100%; max-width: 860px; padding: 36px 24px 60px; flex: 1; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* LANGUAGE */
+  .lang-screen { text-align: center; }
+  .lang-screen h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; }
+  .lang-screen .sub { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+  .lang-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 640px; margin: 0 auto; }
+  .lang-btn { background: var(--white); border: 2px solid var(--mid-gray); border-radius: var(--radius); padding: 28px 16px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; text-align: center; -webkit-user-select: none; user-select: none; }
+  .lang-btn:active { transform: scale(0.96); }
+  .lang-btn.selected { border-color: var(--brand); background: rgba(122,10,10,0.05); }
+  .lang-btn .flag { font-size: 42px; display: block; margin-bottom: 10px; }
+  .lang-btn .lang-name { font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; color: var(--text); display: block; }
+  .lang-btn .lang-native { font-size: 14px; color: var(--text-muted); margin-top: 4px; display: block; }
+  .btn-lang-continue { margin-top: 32px; display: inline-flex; align-items: center; gap: 12px; background: var(--brand); color: white; font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border: none; border-radius: var(--radius-sm); padding: 18px 52px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+  .btn-lang-continue:active { transform: scale(0.97); background: var(--brand-dark); }
+  .btn-lang-continue svg { width: 22px; height: 22px; fill: white; }
+
+  /* WELCOME */
+  .welcome-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--mid-gray); padding: 48px 48px 40px; text-align: center; }
+  .welcome-icon { width: 80px; height: 80px; background: var(--brand); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; }
+  .welcome-icon svg { width: 40px; height: 40px; fill: white; }
+  .welcome-card h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
+  .welcome-card p { font-size: 17px; color: var(--text-muted); margin-bottom: 40px; line-height: 1.6; }
+  .btn-start { display: inline-flex; align-items: center; gap: 12px; background: var(--brand); color: white; font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; border: none; border-radius: var(--radius-sm); padding: 18px 48px; cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+  .btn-start:active { transform: scale(0.97); background: var(--brand-dark); }
+  .btn-start svg { width: 24px; height: 24px; fill: white; }
+  .lang-change-btn { margin-top: 20px; background: none; border: none; color: var(--text-muted); font-size: 14px; cursor: pointer; text-decoration: underline; padding: 8px; display: block; margin-left: auto; margin-right: auto; }
+
+  /* FORM */
+  .form-header { margin-bottom: 28px; }
+  .step-indicator { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+  .step-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--mid-gray); transition: background 0.2s; }
+  .step-dot.active { background: var(--brand); }
+  .step-dot.done { background: var(--gold); }
+  .form-header h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; color: var(--brand); text-transform: uppercase; letter-spacing: 1px; }
+  .form-header p { color: var(--text-muted); font-size: 15px; margin-top: 6px; }
+
+  .field-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--mid-gray); padding: 24px 28px; margin-bottom: 16px; transition: border-color 0.2s; }
+  .field-card:focus-within { border-color: var(--brand); }
+  .field-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--brand); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+  .field-label svg { width: 16px; height: 16px; fill: var(--brand); opacity: 0.7; }
+  .field-input { width: 100%; font-family: 'Barlow', sans-serif; font-size: 22px; font-weight: 500; color: var(--text); border: none; outline: none; background: transparent; padding: 8px 0; border-bottom: 2px solid var(--light-gray); transition: border-color 0.2s; }
+  .field-input:focus { border-bottom-color: var(--brand); }
+  .field-input::placeholder { color: var(--mid-gray); font-weight: 400; }
+
+  /* ID CAPTURE */
+  .id-capture-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+  .id-capture-slot { border: 2px dashed var(--mid-gray); border-radius: var(--radius-sm); overflow: hidden; aspect-ratio: 16/10; position: relative; cursor: pointer; transition: border-color 0.2s; background: var(--off-white); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; touch-action: manipulation; }
+  .id-capture-slot:active { transform: scale(0.98); }
+  .id-capture-slot.captured { border-style: solid; border-color: var(--brand); }
+  .id-capture-slot .slot-icon { font-size: 32px; }
+  .id-capture-slot .slot-label { font-size: 13px; font-weight: 600; color: var(--text-muted); text-align: center; padding: 0 8px; line-height: 1.4; }
+  .id-capture-slot img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .id-capture-slot .retake-btn { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 6px; font-size: 11px; padding: 4px 8px; cursor: pointer; font-family: 'Barlow', sans-serif; }
+  .id-capture-slot .captured-badge { position: absolute; top: 6px; left: 6px; background: var(--brand); color: white; border-radius: 4px; font-size: 10px; font-weight: 700; padding: 3px 7px; letter-spacing: 0.5px; }
+  input[type="file"].hidden-file { display: none; }
+
+  /* CAMERA MODAL */
+  .cam-modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.88); z-index: 1000; align-items: center; justify-content: center; flex-direction: column; padding: 20px; }
+  .cam-modal-overlay.open { display: flex; }
+  .cam-header { color: white; font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; text-align: center; }
+  .cam-video-wrap { position: relative; border-radius: 12px; overflow: hidden; width: 100%; max-width: 640px; background: #000; }
+  .cam-video-wrap video { width: 100%; display: block; max-height: 60vh; object-fit: cover; }
+  .cam-guide { position: absolute; inset: 12px; border: 2px solid rgba(255,255,255,0.45); border-radius: 8px; pointer-events: none; }
+  .cam-guide::before { content: ''; position: absolute; inset: -6px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 12px; }
+  .cam-corner { position: absolute; width: 20px; height: 20px; border-color: white; border-style: solid; }
+  .cam-corner.tl { top: -2px; left: -2px; border-width: 3px 0 0 3px; }
+  .cam-corner.tr { top: -2px; right: -2px; border-width: 3px 3px 0 0; }
+  .cam-corner.bl { bottom: -2px; left: -2px; border-width: 0 0 3px 3px; }
+  .cam-corner.br { bottom: -2px; right: -2px; border-width: 0 3px 3px 0; }
+  .cam-guide-label { position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; white-space: nowrap; background: rgba(0,0,0,0.5); padding: 4px 14px; border-radius: 20px; }
+  .cam-actions { display: flex; gap: 20px; margin-top: 24px; align-items: center; justify-content: center; }
+  .cam-shutter { width: 74px; height: 74px; border-radius: 50%; background: white; border: 5px solid rgba(255,255,255,0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; touch-action: manipulation; }
+  .cam-shutter:active { transform: scale(0.92); background: #ddd; }
+  .cam-shutter svg { width: 36px; height: 36px; fill: var(--brand); }
+  .cam-cancel-btn { background: transparent; border: 2px solid rgba(255,255,255,0.4); color: white; border-radius: 8px; padding: 14px 28px; font-family: 'Barlow Condensed', sans-serif; font-size: 17px; font-weight: 600; cursor: pointer; letter-spacing: 0.5px; touch-action: manipulation; }
+  .cam-cancel-btn:active { background: rgba(255,255,255,0.1); }
+  canvas#cam-canvas { display: none; }
+
+  /* RADIO */
+  .radio-group { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+  .radio-btn { border: 2px solid var(--mid-gray); border-radius: var(--radius-sm); padding: 16px; text-align: center; cursor: pointer; transition: all 0.15s; font-size: 18px; font-weight: 600; color: var(--text-muted); touch-action: manipulation; user-select: none; }
+  .radio-btn:active { transform: scale(0.97); }
+  .radio-btn.selected { border-color: var(--brand); background: rgba(122,10,10,0.06); color: var(--brand); }
+  .radio-btn .radio-icon { font-size: 28px; display: block; margin-bottom: 6px; }
+
+  /* TIME */
+  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 8px; }
+  .time-chip { border: 1.5px solid var(--mid-gray); border-radius: 8px; padding: 12px 8px; text-align: center; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--text-muted); transition: all 0.15s; touch-action: manipulation; user-select: none; }
+  .time-chip:active { transform: scale(0.96); }
+  .time-chip.selected { border-color: var(--brand); background: rgba(122,10,10,0.06); color: var(--brand); }
+  .time-custom-row { margin-top: 12px; display: flex; align-items: center; gap: 10px; }
+  .time-custom-row input { flex: 1; font-family: 'Barlow', sans-serif; font-size: 18px; font-weight: 500; color: var(--text); border: none; border-bottom: 2px solid var(--light-gray); outline: none; background: transparent; padding: 6px 0; transition: border-color 0.2s; }
+  .time-custom-row input:focus { border-bottom-color: var(--brand); }
+
+  /* NAV */
+  .form-nav { display: flex; gap: 12px; margin-top: 28px; }
+  .btn-back { flex: 0 0 auto; background: transparent; border: 2px solid var(--mid-gray); border-radius: var(--radius-sm); padding: 16px 24px; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.15s; touch-action: manipulation; display: flex; align-items: center; gap: 8px; }
+  .btn-back:active { transform: scale(0.97); }
+  .btn-next { flex: 1; background: var(--brand); border: none; border-radius: var(--radius-sm); padding: 18px; font-family: 'Barlow Condensed', sans-serif; font-size: 22px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: white; cursor: pointer; transition: all 0.15s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 10px; }
+  .btn-next:active { transform: scale(0.98); background: var(--brand-dark); }
+  .btn-next svg, .btn-back svg { width: 22px; height: 22px; fill: currentColor; }
+
+  /* REVIEW */
+  .review-card { background: var(--white); border-radius: var(--radius); border: 1px solid var(--mid-gray); overflow: hidden; margin-bottom: 20px; }
+  .review-card-header { background: var(--brand); padding: 14px 24px; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: white; }
+  .review-row { display: flex; align-items: flex-start; padding: 14px 24px; border-bottom: 1px solid var(--light-gray); gap: 16px; }
+  .review-row:last-child { border-bottom: none; }
+  .review-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); min-width: 120px; padding-top: 2px; }
+  .review-value { font-size: 17px; font-weight: 600; color: var(--text); flex: 1; }
+  .review-id-imgs { display: flex; gap: 10px; flex: 1; }
+  .review-id-imgs img { width: 120px; height: 75px; object-fit: cover; border-radius: 6px; border: 1px solid var(--mid-gray); }
+  .type-badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 14px; font-weight: 700; }
+  .type-badge.delivery { background: rgba(122,10,10,0.1); color: var(--brand); }
+  .type-badge.pickup { background: rgba(201,168,76,0.15); color: #7a5a10; }
+  .btn-submit { width: 100%; background: var(--brand); border: none; border-radius: var(--radius-sm); padding: 22px; font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: white; cursor: pointer; transition: all 0.15s; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .btn-submit:active { transform: scale(0.98); background: var(--brand-dark); }
+  .btn-submit svg { width: 26px; height: 26px; fill: white; }
+
+  /* SUCCESS */
+  .success-screen { text-align: center; padding: 20px 0; }
+  .success-circle { width: 100px; height: 100px; background: var(--success-bg); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 28px; animation: popIn 0.4s ease; }
+  .success-circle svg { width: 52px; height: 52px; fill: var(--success); }
+  @keyframes popIn { 0%{transform:scale(0.5);opacity:0} 80%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+  .success-screen h2 { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--success); margin-bottom: 10px; }
+  .success-screen p { font-size: 18px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.6; }
+  .driver-name-display { font-size: 22px; font-weight: 700; color: var(--brand); margin-bottom: 32px; }
+  .notify-status { background: var(--white); border-radius: var(--radius); border: 1px solid var(--mid-gray); padding: 20px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 28px; text-align: left; }
+  .notify-icon { width: 46px; height: 46px; background: rgba(122,10,10,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .notify-icon svg { width: 22px; height: 22px; fill: var(--brand); }
+  .notify-text h4 { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+  .notify-text p { font-size: 13px; color: var(--text-muted); margin: 0; }
+  .btn-new { display: inline-flex; align-items: center; gap: 10px; background: transparent; border: 2px solid var(--brand); border-radius: var(--radius-sm); padding: 16px 40px; font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--brand); cursor: pointer; transition: all 0.15s; touch-action: manipulation; }
+  .btn-new:active { background: rgba(122,10,10,0.06); transform: scale(0.97); }
+
+  .error-msg { font-size: 13px; color: #c0392b; margin-top: 8px; display: none; }
+  .error-msg.show { display: block; }
+  .photo-note { background: rgba(122,10,10,0.05); border-left: 3px solid var(--brand); border-radius: 0 8px 8px 0; padding: 10px 14px; font-size: 13px; color: var(--text-muted); margin-top: 14px; line-height: 1.5; }
+
+  /* DISPATCH WARNING */
+  .dispatch-warning { display: flex; align-items: flex-start; gap: 14px; background: #fff8e1; border: 2px solid #f59e0b; border-radius: var(--radius-sm); padding: 18px 20px; margin-bottom: 18px; }
+  .dispatch-warning-icon { font-size: 24px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+  .dispatch-warning-text { font-size: 14px; color: #7a5500; line-height: 1.55; }
+  .dispatch-warning-text strong { display: block; font-size: 15px; font-weight: 700; color: #5a3d00; margin-bottom: 4px; }
+
+  /* CITY / STATE ROW */
+  .city-state-row { display: flex; gap: 14px; margin-top: 10px; }
+  .city-state-field { display: flex; flex-direction: column; }
+  .city-state-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 4px; }
+</style>
+</head>
+<body>
+
+<!-- CAMERA MODAL -->
+<div class="cam-modal-overlay" id="cam-modal">
+  <div class="cam-header" id="cam-title">Photograph ID</div>
+  <div class="cam-video-wrap">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-guide">
+      <div class="cam-corner tl"></div>
+      <div class="cam-corner tr"></div>
+      <div class="cam-corner bl"></div>
+      <div class="cam-corner br"></div>
+      <div class="cam-guide-label" id="cam-guide-label">Align ID within the frame</div>
+    </div>
+  </div>
+  <canvas id="cam-canvas"></canvas>
+  <div class="cam-actions">
+    <button class="cam-cancel-btn" id="cam-cancel-btn" onclick="closeCamera()">✕ Cancel</button>
+    <button class="cam-shutter" onclick="capturePhoto()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M9 2L7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="header">
+  <img src="data:image/jpeg;base64,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" alt="Winneram Logo">
+  <div class="header-text">
+    <h1>Winneram</h1>
+    <p id="hdr-subtitle">Driver Check-In System</p>
+  </div>
+  <div class="header-time">
+    <div class="time" id="clock">--:--</div>
+    <div class="date" id="datestamp"></div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- LANGUAGE SELECTION -->
+  <div class="screen active" id="screen-lang">
+    <div class="lang-screen">
+      <h2>Select Your Language</h2>
+      <p class="sub">请选择语言 &nbsp;·&nbsp; Seleccione su idioma</p>
+      <div class="lang-grid">
+        <div class="lang-btn" id="lang-en">
+          <span class="flag">🇺🇸</span>
+          <span class="lang-name">English</span>
+          <span class="lang-native">English</span>
+        </div>
+        <div class="lang-btn" id="lang-es">
+          <span class="flag">🇲🇽</span>
+          <span class="lang-name">Spanish</span>
+          <span class="lang-native">Español</span>
+        </div>
+        <div class="lang-btn" id="lang-zh">
+          <span class="flag">🇨🇳</span>
+          <span class="lang-name">Chinese</span>
+          <span class="lang-native">中文</span>
+        </div>
+      </div>
+      <br>
+      <button class="btn-lang-continue" id="btn-lang-continue">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="lang-continue-btn">Continue</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- WELCOME -->
+  <div class="screen" id="screen-welcome">
+    <div class="welcome-card">
+      <div class="welcome-icon">
+        <svg viewBox="0 0 24 24"><path d="M17 8c.7 0 1.4.1 2 .3V6c0-1.1-.9-2-2-2H7C5.9 4 5 4.9 5 6v1.3A7 7 0 0 1 17 8zm0 2a5 5 0 1 0 0 10A5 5 0 0 0 17 10zM5 8.7V18c0 1.1.9 2 2 2h7.1A7 7 0 0 1 5 8.7z"/><path d="M17 12v3l2 1-1 1.7-2.5-1.5V12h1.5z"/></svg>
+      </div>
+      <h2 id="w-title">Welcome, Driver</h2>
+      <p id="w-body">Please use this kiosk to check in before approaching the desk.<br>It only takes about 60 seconds.</p>
+      <button class="btn-start" onclick="goTo('screen-step1')">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        <span id="w-start">Begin Check-In</span>
+      </button>
+      <button class="lang-change-btn" onclick="goTo('screen-lang')" id="w-changelang">← Change language</button>
+    </div>
+  </div>
+
+  <!-- STEP 1: Name + ID Photos -->
+  <div class="screen" id="screen-step1">
+    <div class="form-header">
+      <div class="step-indicator">
+        <div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div><div class="step-dot"></div>
+      </div>
+      <h2 id="s1-title">Driver Information</h2>
+      <p id="s1-sub">Step 1 of 4 — Tell us about yourself</p>
+    </div>
+
+    <div class="field-card">
+      <div class="field-label">
+        <svg viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-3.3 0-10 1.7-10 5v2h20v-2c0-3.3-6.7-5-10-5z"/></svg>
+        <span id="lbl-name">Full Name</span>
+      </div>
+      <input class="field-input" type="text" id="driver-name" placeholder="Enter your full name" autocomplete="off" inputmode="text">
+      <div class="error-msg" id="err-name">Please enter your name</div>
+    </div>
+
+    <div class="field-card">
+      <div class="field-label">
+        <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v3h2V6l16 .01V8h2V6c0-1.1-.9-2-2-2zM2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-3h-2v3H4v-3H2v3zm10-9c-2.2 0-4 1.8-4 4s1.8 4 4 4 4-1.8 4-4-1.8-4-4-4zm0 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+        <span id="lbl-idphotos">ID / License Photos</span>
+      </div>
+      <div class="id-capture-grid">
+        <div class="id-capture-slot" id="slot-front" onclick="openCamera('front')">
+          <div class="slot-icon">📷</div>
+          <div class="slot-label" id="lbl-front">Tap to photograph<br><strong>Front of ID</strong></div>
+        </div>
+        <div class="id-capture-slot" id="slot-back" onclick="openCamera('back')">
+          <div class="slot-icon">📷</div>
+          <div class="slot-label" id="lbl-back">Tap to photograph<br><strong>Back of ID</strong></div>
+        </div>
+      </div>
+      <input type="file" accept="image/*" capture="environment" class="hidden-file" id="file-front" onchange="handleFileCapture('front', this)">
+      <input type="file" accept="image/*" capture="environment" class="hidden-file" id="file-back" onchange="handleFileCapture('back', this)">
+      <div class="photo-note" id="photo-note">📋 Please have your driver's license or government-issued ID ready. Photos are used for identity verification only.</div>
+      <div class="error-msg" id="err-photos">Please photograph both the front and back of your ID</div>
+    </div>
+
+    <div class="form-nav">
+      <button class="btn-back" onclick="goTo('screen-welcome')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span id="btn-back-s1">Back</span>
+      </button>
+      <button class="btn-next" onclick="validateStep1()">
+        <span id="btn-next-s1">Continue</span>
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 2 -->
+  <div class="screen" id="screen-step2">
+    <div class="form-header">
+      <div class="step-indicator">
+        <div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div><div class="step-dot"></div>
+      </div>
+      <h2 id="s2-title">Visit Type</h2>
+      <p id="s2-sub">Step 2 of 4 — Are you delivering or picking up?</p>
+    </div>
+    <div class="field-card">
+      <div class="field-label" id="lbl-selectone">Select one</div>
+      <div class="radio-group">
+        <div class="radio-btn" id="btn-delivery" onclick="selectType('delivery')">
+          <span class="radio-icon">📦</span>
+          <span id="lbl-delivery">Delivery</span>
+        </div>
+        <div class="radio-btn" id="btn-pickup" onclick="selectType('pickup')">
+          <span class="radio-icon">🚛</span>
+          <span id="lbl-pickup">Pickup</span>
+        </div>
+      </div>
+      <div class="error-msg" id="err-type">Please select delivery or pickup</div>
+    </div>
+    <div class="form-nav">
+      <button class="btn-back" onclick="goTo('screen-step1')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span id="btn-back-s2">Back</span>
+      </button>
+      <button class="btn-next" onclick="validateStep2()">
+        <span id="btn-next-s2">Continue</span>
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 3 -->
+  <div class="screen" id="screen-step3">
+    <div class="form-header">
+      <div class="step-indicator">
+        <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div><div class="step-dot"></div>
+      </div>
+      <h2 id="s3-title">Load Details</h2>
+      <p id="s3-sub">Step 3 of 4 — Tell us about your load</p>
+    </div>
+
+    <!-- Dispatch warning -->
+    <div class="dispatch-warning" id="dispatch-warning">
+      <div class="dispatch-warning-icon">⚠️</div>
+      <div class="dispatch-warning-text">
+        <strong id="dispatch-warning-title">No PO or Load Number?</strong>
+        <span id="dispatch-warning-body">You must have a PO number or load number to proceed. If you do not have one, please contact your dispatch before continuing.</span>
+      </div>
+    </div>
+
+    <div class="field-card">
+      <div class="field-label">
+        <svg viewBox="0 0 24 24"><path d="M20 6h-3V4c0-1.1-.9-2-2-2H9c-1.1 0-2 .9-2 2v2H4c-1.1 0-2 .9-2 2v11c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zM9 4h6v2H9V4zm11 15H4V8h16v11z"/></svg>
+        <span id="lbl-carrier">Carrier / Company Name</span>
+      </div>
+      <input class="field-input" type="text" id="carrier" placeholder="e.g. FedEx Freight, XPO Logistics" autocomplete="off" inputmode="text">
+      <div class="error-msg" id="err-carrier">Please enter carrier or company name</div>
+    </div>
+    <div class="field-card">
+      <div class="field-label">
+        <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+        <span id="lbl-po">PO Number / Load Number</span>
+      </div>
+      <input class="field-input" type="text" id="po-number" placeholder="e.g. PO-2024-00583" autocomplete="off" inputmode="text">
+      <div class="error-msg" id="err-po">Please enter the PO or load number</div>
+    </div>
+    <div class="field-card">
+      <div class="field-label">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg>
+        <span id="lbl-destination">Load Destination</span>
+      </div>
+      <div class="city-state-row">
+        <div class="city-state-field" style="flex:2">
+          <label class="city-state-label" id="lbl-city">City</label>
+          <input class="field-input" type="text" id="dest-city" placeholder="e.g. Los Angeles" autocomplete="off" inputmode="text">
+        </div>
+        <div class="city-state-field" style="flex:1">
+          <label class="city-state-label" id="lbl-state">State</label>
+          <input class="field-input" type="text" id="dest-state" placeholder="e.g. CA" autocomplete="off" inputmode="text" maxlength="2" style="text-transform:uppercase">
+        </div>
+      </div>
+      <div class="error-msg" id="err-destination">Please enter the destination city and state</div>
+    </div>
+    <div class="form-nav">
+      <button class="btn-back" onclick="goTo('screen-step2')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span id="btn-back-s3">Back</span>
+      </button>
+      <button class="btn-next" onclick="validateStep3()">
+        <span id="btn-next-s3">Continue</span>
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 4 -->
+  <div class="screen" id="screen-step4">
+    <div class="form-header">
+      <div class="step-indicator">
+        <div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot done"></div><div class="step-dot active"></div>
+      </div>
+      <h2 id="s4-title">Appointment</h2>
+      <p id="s4-sub">Step 4 of 4 — Do you have a scheduled appointment?</p>
+    </div>
+
+    <!-- Yes / No toggle -->
+    <div class="field-card">
+      <div class="field-label" id="lbl-hasappt">Do you have an appointment?</div>
+      <div class="radio-group">
+        <div class="radio-btn" id="btn-appt-yes" onclick="selectAppt('yes')">
+          <span class="radio-icon">📅</span>
+          <span id="lbl-appt-yes">Yes, I have one</span>
+        </div>
+        <div class="radio-btn" id="btn-appt-no" onclick="selectAppt('no')">
+          <span class="radio-icon">🚚</span>
+          <span id="lbl-appt-no">No appointment</span>
+        </div>
+      </div>
+      <div class="error-msg" id="err-hasappt">Please select yes or no</div>
+    </div>
+
+    <!-- Time picker — shown only when 'yes' selected -->
+    <div id="time-picker-section" style="display:none;">
+      <div class="field-card">
+        <div class="field-label" id="lbl-selecttime">Select a time window or enter your time</div>
+        <div class="time-grid" id="time-grid"></div>
+        <div class="time-custom-row">
+          <input type="time" id="custom-time">
+          <span style="font-size:13px;color:var(--text-muted)" id="lbl-customtime">Custom time</span>
+        </div>
+        <div class="error-msg" id="err-time">Please select or enter your appointment time</div>
+      </div>
+    </div>
+
+    <div class="form-nav">
+      <button class="btn-back" onclick="goTo('screen-step3')">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span id="btn-back-s4">Back</span>
+      </button>
+      <button class="btn-next" onclick="goToReview()">
+        <span id="btn-review">Review & Submit</span>
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- REVIEW -->
+  <div class="screen" id="screen-review">
+    <div class="form-header">
+      <h2 id="rv-title">Review Your Details</h2>
+      <p id="rv-sub">Please confirm everything looks correct before submitting</p>
+    </div>
+    <div class="review-card">
+      <div class="review-card-header" id="rv-hdr1">Driver Information</div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-name">Full Name</div><div class="review-value" id="rv-name">—</div></div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-id">ID Photos</div><div class="review-id-imgs" id="rv-id-imgs"></div></div>
+    </div>
+    <div class="review-card">
+      <div class="review-card-header" id="rv-hdr2">Visit Details</div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-type">Visit Type</div><div class="review-value" id="rv-type">—</div></div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-carrier">Carrier</div><div class="review-value" id="rv-carrier">—</div></div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-po">PO / Load #</div><div class="review-value" id="rv-po">—</div></div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-dest">Destination</div><div class="review-value" id="rv-dest">—</div></div>
+      <div class="review-row"><div class="review-label" id="rv-lbl-appt">Appointment</div><div class="review-value" id="rv-time">—</div></div>
+    </div>
+    <button class="btn-submit" onclick="submitCheckin()">
+      <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      <span id="btn-confirm">Confirm Check-In</span>
+    </button>
+    <div class="form-nav" style="margin-top:16px;">
+      <button class="btn-back" onclick="goTo('screen-step4')" style="width:100%;justify-content:center;">
+        <svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+        <span id="btn-edit">Edit Answers</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- SUCCESS -->
+  <div class="screen" id="screen-success">
+    <div class="success-screen">
+      <div class="success-circle">
+        <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+      </div>
+      <h2 id="suc-title">You're Checked In!</h2>
+      <p id="suc-welcome">Welcome,</p>
+      <p class="driver-name-display" id="success-name">Driver</p>
+      <p id="suc-body">A staff member has been notified<br>and will be with you shortly.</p>
+      <div style="height:24px;"></div>
+      <div class="notify-status">
+        <div class="notify-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        </div>
+        <div class="notify-text">
+          <h4 id="suc-notif-title">Staff notification sent</h4>
+          <p id="notify-detail">Your check-in details have been sent to the team.</p>
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--text-muted);margin-bottom:24px;" id="suc-wait">Please wait in the reception area.<br>Do not proceed to the dock until directed.</p>
+      <button class="btn-new" onclick="resetApp()">
+        <svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor;"><path d="M12 5V1L7 6l5 5V7c3.3 0 6 2.7 6 6s-2.7 6-6 6-6-2.7-6-6H4c0 4.4 3.6 8 8 8s8-3.6 8-8-3.6-8-8-8z"/></svg>
+        <span id="btn-newcheckin">New Check-In</span>
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const T = {
+  en: {
+    hdrSubtitle:'Driver Check-In System', wTitle:'Welcome, Driver',
+    wBody:'Please use this kiosk to check in before approaching the desk.<br>It only takes about 60 seconds.',
+    wStart:'Begin Check-In', wChangeLang:'← Change language',
+    s1Title:'Driver Information', s1Sub:'Step 1 of 4 — Tell us about yourself',
+    lblName:'Full Name', lblIdPhotos:'ID / License Photos',
+    lblFront:'Tap to photograph<br><strong>Front of ID</strong>',
+    lblBack:'Tap to photograph<br><strong>Back of ID</strong>',
+    photoNote:"📋 Please have your driver's license or government-issued ID ready. Photos are used for identity verification only.",
+    errName:'Please enter your name', errPhotos:'Please photograph both the front and back of your ID',
+    nameInputPh:'Enter your full name',
+    s2Title:'Visit Type', s2Sub:'Step 2 of 4 — Are you delivering or picking up?',
+    lblSelectOne:'Select one', lblDelivery:'Delivery', lblPickup:'Pickup',
+    errType:'Please select delivery or pickup',
+    s3Title:'Load Details', s3Sub:'Step 3 of 4 — Tell us about your load',
+    lblCarrier:'Carrier / Company Name', lblPo:'PO Number / Load Number',
+    errCarrier:'Please enter carrier or company name', errPo:'Please enter the PO or load number',
+    carrierPh:'e.g. FedEx Freight, XPO Logistics', poPh:'e.g. PO-2024-00583',
+    dispatchWarningTitle:'No PO or Load Number?',
+    dispatchWarningBody:'You must have a PO number or load number to proceed. If you do not have one, please contact your dispatch before continuing.',
+    lblDestination:'Load Destination', lblCity:'City', lblState:'State',
+    cityPh:'e.g. Los Angeles', statePh:'e.g. CA',
+    errDestination:'Please enter the destination city and state',
+    s4Title:'Appointment', s4Sub:'Step 4 of 4 — Do you have a scheduled appointment?',
+    lblHasAppt:'Do you have an appointment?',
+    lblApptYes:'Yes, I have one', lblApptNo:'No appointment',
+    errHasAppt:'Please select yes or no',
+    lblSelectTime:'Select a time window or enter your time', lblCustomTime:'Custom time',
+    errTime:'Please select or enter your appointment time',
+    btnBack:'Back', btnNext:'Continue', btnReview:'Review & Submit', btnConfirm:'Confirm Check-In', btnEdit:'Edit Answers',
+    rvTitle:'Review Your Details', rvSub:'Please confirm everything looks correct before submitting',
+    rvHdr1:'Driver Information', rvHdr2:'Visit Details',
+    rvLblName:'Full Name', rvLblId:'ID Photos', rvLblType:'Visit Type',
+    rvLblCarrier:'Carrier', rvLblPo:'PO / Load #', rvLblDest:'Destination', rvLblAppt:'Appointment',
+    sucTitle:"You're Checked In!", sucWelcome:'Welcome,',
+    sucBody:'A staff member has been notified<br>and will be with you shortly.',
+    sucNotifTitle:'Staff notification sent',
+    sucWait:'Please wait in the reception area.<br>Do not proceed to the dock until directed.',
+    btnNewCheckin:'New Check-In',
+    camFront:'Photograph ID — Front', camBack:'Photograph ID — Back',
+    camGuide:'Align ID within the frame', camCancel:'✕ Cancel',
+    retake:'Retake', captured:'✓ Captured',
+    deliveryBadge:'Delivery', pickupBadge:'Pickup'
+  },
+  es: {
+    hdrSubtitle:'Sistema de Registro de Conductores', wTitle:'Bienvenido, Conductor',
+    wBody:'Por favor use este quiosco para registrarse antes de acercarse al mostrador.<br>Solo tarda unos 60 segundos.',
+    wStart:'Iniciar Registro', wChangeLang:'← Cambiar idioma',
+    s1Title:'Información del Conductor', s1Sub:'Paso 1 de 4 — Cuéntenos sobre usted',
+    lblName:'Nombre Completo', lblIdPhotos:'Fotos de ID / Licencia',
+    lblFront:'Toque para fotografiar<br><strong>Frente del ID</strong>',
+    lblBack:'Toque para fotografiar<br><strong>Reverso del ID</strong>',
+    photoNote:'📋 Tenga lista su licencia de conducir o identificación oficial. Las fotos se usan solo para verificación de identidad.',
+    errName:'Por favor ingrese su nombre', errPhotos:'Por favor fotografíe el frente y reverso de su identificación',
+    nameInputPh:'Ingrese su nombre completo',
+    s2Title:'Tipo de Visita', s2Sub:'Paso 2 de 4 — ¿Está entregando o recogiendo?',
+    lblSelectOne:'Seleccione uno', lblDelivery:'Entrega', lblPickup:'Recolección',
+    errType:'Por favor seleccione entrega o recolección',
+    s3Title:'Detalles de Carga', s3Sub:'Paso 3 de 4 — Cuéntenos sobre su carga',
+    lblCarrier:'Nombre del Transportista / Empresa', lblPo:'Número de PO / Carga',
+    errCarrier:'Por favor ingrese el nombre del transportista', errPo:'Por favor ingrese el número de PO o carga',
+    carrierPh:'ej. FedEx Freight, XPO Logistics', poPh:'ej. PO-2024-00583',
+    dispatchWarningTitle:'¿No tiene número de PO o de carga?',
+    dispatchWarningBody:'Debe tener un número de PO o número de carga para continuar. Si no lo tiene, comuníquese con su despacho antes de continuar.',
+    lblDestination:'Destino de la Carga', lblCity:'Ciudad', lblState:'Estado',
+    cityPh:'ej. Los Ángeles', statePh:'ej. CA',
+    errDestination:'Por favor ingrese la ciudad y estado de destino',
+    s4Title:'Cita', s4Sub:'Paso 4 de 4 — ¿Tiene una cita programada?',
+    lblHasAppt:'¿Tiene una cita?',
+    lblApptYes:'Sí, tengo una', lblApptNo:'Sin cita',
+    errHasAppt:'Por favor seleccione sí o no',
+    lblSelectTime:'Seleccione un horario o ingrese su hora', lblCustomTime:'Hora personalizada',
+    errTime:'Por favor seleccione o ingrese la hora de su cita',
+    btnBack:'Atrás', btnNext:'Continuar', btnReview:'Revisar y Enviar', btnConfirm:'Confirmar Registro', btnEdit:'Editar Respuestas',
+    rvTitle:'Revise Sus Datos', rvSub:'Por favor confirme que todo esté correcto antes de enviar',
+    rvHdr1:'Información del Conductor', rvHdr2:'Detalles de Visita',
+    rvLblName:'Nombre Completo', rvLblId:'Fotos de ID', rvLblType:'Tipo de Visita',
+    rvLblCarrier:'Transportista', rvLblPo:'PO / Carga #', rvLblDest:'Destino', rvLblAppt:'Cita',
+    sucTitle:'¡Registro Completado!', sucWelcome:'Bienvenido/a,',
+    sucBody:'Un miembro del personal ha sido notificado<br>y estará con usted en breve.',
+    sucNotifTitle:'Notificación enviada al personal',
+    sucWait:'Por favor espere en el área de recepción.<br>No proceda al muelle hasta que se le indique.',
+    btnNewCheckin:'Nuevo Registro',
+    camFront:'Fotografiar ID — Frente', camBack:'Fotografiar ID — Reverso',
+    camGuide:'Alinee el ID dentro del marco', camCancel:'✕ Cancelar',
+    retake:'Repetir', captured:'✓ Capturado',
+    deliveryBadge:'Entrega', pickupBadge:'Recolección'
+  },
+  zh: {
+    hdrSubtitle:'司机签到系统', wTitle:'欢迎，司机',
+    wBody:'请在前往服务台之前使用此终端签到。<br>只需约60秒即可完成。',
+    wStart:'开始签到', wChangeLang:'← 更改语言',
+    s1Title:'司机信息', s1Sub:'第1步，共4步 — 请告诉我们您的信息',
+    lblName:'全名', lblIdPhotos:'身份证 / 驾照照片',
+    lblFront:'点击拍摄<br><strong>证件正面</strong>',
+    lblBack:'点击拍摄<br><strong>证件背面</strong>',
+    photoNote:'📋 请准备好您的驾照或政府颁发的身份证件。照片仅用于身份验证。',
+    errName:'请输入您的姓名', errPhotos:'请拍摄身份证件的正面和背面',
+    nameInputPh:'请输入您的全名',
+    s2Title:'访问类型', s2Sub:'第2步，共4步 — 您是送货还是取货？',
+    lblSelectOne:'请选择', lblDelivery:'送货', lblPickup:'取货',
+    errType:'请选择送货或取货',
+    s3Title:'货物详情', s3Sub:'第3步，共4步 — 请告诉我们货物信息',
+    lblCarrier:'承运人 / 公司名称', lblPo:'采购订单 / 货物编号',
+    errCarrier:'请输入承运人或公司名称', errPo:'请输入采购订单或货物编号',
+    carrierPh:'例如：顺丰、中通快递', poPh:'例如：PO-2024-00583',
+    dispatchWarningTitle:'没有PO号或货物编号？',
+    dispatchWarningBody:'继续前您必须提供PO号或货物编号。如果没有，请在继续之前联系您的调度员。',
+    lblDestination:'货物目的地', lblCity:'城市', lblState:'州',
+    cityPh:'例如：洛杉矶', statePh:'例如：CA',
+    errDestination:'请输入目的地城市和州',
+    s4Title:'预约', s4Sub:'第4步，共4步 — 您是否有预约？',
+    lblHasAppt:'您有预约吗？',
+    lblApptYes:'是，我有预约', lblApptNo:'没有预约',
+    errHasAppt:'请选择是或否',
+    lblSelectTime:'选择时间段或输入您的时间', lblCustomTime:'自定义时间',
+    errTime:'请选择或输入您的预约时间',
+    btnBack:'返回', btnNext:'继续', btnReview:'审核并提交', btnConfirm:'确认签到', btnEdit:'编辑信息',
+    rvTitle:'审核您的信息', rvSub:'提交前请确认所有信息正确',
+    rvHdr1:'司机信息', rvHdr2:'访问详情',
+    rvLblName:'全名', rvLblId:'证件照片', rvLblType:'访问类型',
+    rvLblCarrier:'承运人', rvLblPo:'订单 / 货物编号', rvLblDest:'目的地', rvLblAppt:'预约时间',
+    sucTitle:'签到成功！', sucWelcome:'欢迎，',
+    sucBody:'工作人员已收到通知，<br>请稍候。',
+    sucNotifTitle:'已通知工作人员',
+    sucWait:'请在接待区等候。<br>未经指示请勿前往装卸区。',
+    btnNewCheckin:'新签到',
+    camFront:'拍摄证件 — 正面', camBack:'拍摄证件 — 背面',
+    camGuide:'将证件对准框内', camCancel:'✕ 取消',
+    retake:'重拍', captured:'✓ 已拍摄',
+    deliveryBadge:'送货', pickupBadge:'取货'
+  }
+};
+
+const TEAMS_WEBHOOK_URL = 'https://winneram.webhook.office.com/webhookb2/0f115792-8735-46b1-9406-300b5990c67e@c61dadc7-35f9-474b-9103-b534ecff2eba/IncomingWebhook/ed2e74bef1594307b88cf77c0563c818/e787b74a-354f-4b5e-8d73-c92ba42af54b/V2lXg6tSgPB2TP8d3Kh5syyz0J5dkzpbcjmbEuepnyxgY1';
+let lang = 'en';
+const data = { name:'', type:'', carrier:'', po:'', destCity:'', destState:'', hasAppt:null, time:'', idFront:null, idBack:null };
+let camStream = null, camTarget = null;
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('datestamp').textContent = days[now.getDay()] + ', ' + months[now.getMonth()] + ' ' + now.getDate();
+}
+updateClock(); setInterval(updateClock, 10000);
+
+// Language
+function selectLang(l) {
+  lang = l;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('lang-' + l).classList.add('selected');
+  document.getElementById('lang-continue-btn').textContent = {en:'Continue', es:'Continuar', zh:'继续'}[l];
+}
+
+function confirmLang() {
+  if (!lang) return;
+  const t = T[lang];
+  document.getElementById('hdr-subtitle').textContent = t.hdrSubtitle;
+  document.getElementById('w-title').textContent = t.wTitle;
+  document.getElementById('w-body').innerHTML = t.wBody;
+  document.getElementById('w-start').textContent = t.wStart;
+  document.getElementById('w-changelang').textContent = t.wChangeLang;
+  document.getElementById('s1-title').textContent = t.s1Title;
+  document.getElementById('s1-sub').textContent = t.s1Sub;
+  document.getElementById('lbl-name').textContent = t.lblName;
+  document.getElementById('lbl-idphotos').textContent = t.lblIdPhotos;
+  document.getElementById('lbl-front').innerHTML = t.lblFront;
+  document.getElementById('lbl-back').innerHTML = t.lblBack;
+  document.getElementById('photo-note').textContent = t.photoNote;
+  document.getElementById('err-name').textContent = t.errName;
+  document.getElementById('err-photos').textContent = t.errPhotos;
+  document.getElementById('driver-name').placeholder = t.nameInputPh;
+  document.getElementById('s2-title').textContent = t.s2Title;
+  document.getElementById('s2-sub').textContent = t.s2Sub;
+  document.getElementById('lbl-selectone').textContent = t.lblSelectOne;
+  document.getElementById('lbl-delivery').textContent = t.lblDelivery;
+  document.getElementById('lbl-pickup').textContent = t.lblPickup;
+  document.getElementById('err-type').textContent = t.errType;
+  document.getElementById('s3-title').textContent = t.s3Title;
+  document.getElementById('s3-sub').textContent = t.s3Sub;
+  document.getElementById('lbl-carrier').textContent = t.lblCarrier;
+  document.getElementById('lbl-po').textContent = t.lblPo;
+  document.getElementById('carrier').placeholder = t.carrierPh;
+  document.getElementById('po-number').placeholder = t.poPh;
+  document.getElementById('err-carrier').textContent = t.errCarrier;
+  document.getElementById('err-po').textContent = t.errPo;
+  document.getElementById('dispatch-warning-title').textContent = t.dispatchWarningTitle;
+  document.getElementById('dispatch-warning-body').textContent = t.dispatchWarningBody;
+  document.getElementById('lbl-destination').textContent = t.lblDestination;
+  document.getElementById('lbl-city').textContent = t.lblCity;
+  document.getElementById('lbl-state').textContent = t.lblState;
+  document.getElementById('dest-city').placeholder = t.cityPh;
+  document.getElementById('dest-state').placeholder = t.statePh;
+  document.getElementById('err-destination').textContent = t.errDestination;
+  document.getElementById('s4-title').textContent = t.s4Title;
+  document.getElementById('s4-sub').textContent = t.s4Sub;
+  document.getElementById('lbl-hasappt').textContent = t.lblHasAppt;
+  document.getElementById('lbl-appt-yes').textContent = t.lblApptYes;
+  document.getElementById('lbl-appt-no').textContent = t.lblApptNo;
+  document.getElementById('err-hasappt').textContent = t.errHasAppt;
+  document.getElementById('lbl-selecttime').textContent = t.lblSelectTime;
+  document.getElementById('lbl-customtime').textContent = t.lblCustomTime;
+  document.getElementById('err-time').textContent = t.errTime;
+  ['s1','s2','s3','s4'].forEach(s => {
+    const back = document.getElementById('btn-back-' + s);
+    if (back) back.textContent = t.btnBack;
+  });
+  document.getElementById('btn-next-s1').textContent = t.btnNext;
+  document.getElementById('btn-next-s2').textContent = t.btnNext;
+  document.getElementById('btn-next-s3').textContent = t.btnNext;
+  document.getElementById('btn-review').textContent = t.btnReview;
+  document.getElementById('btn-confirm').textContent = t.btnConfirm;
+  document.getElementById('btn-edit').textContent = t.btnEdit;
+  document.getElementById('rv-title').textContent = t.rvTitle;
+  document.getElementById('rv-sub').textContent = t.rvSub;
+  document.getElementById('rv-hdr1').textContent = t.rvHdr1;
+  document.getElementById('rv-hdr2').textContent = t.rvHdr2;
+  document.getElementById('rv-lbl-name').textContent = t.rvLblName;
+  document.getElementById('rv-lbl-id').textContent = t.rvLblId;
+  document.getElementById('rv-lbl-type').textContent = t.rvLblType;
+  document.getElementById('rv-lbl-carrier').textContent = t.rvLblCarrier;
+  document.getElementById('rv-lbl-po').textContent = t.rvLblPo;
+  document.getElementById('rv-lbl-dest').textContent = t.rvLblDest;
+  document.getElementById('rv-lbl-appt').textContent = t.rvLblAppt;
+  document.getElementById('suc-title').textContent = t.sucTitle;
+  document.getElementById('suc-welcome').textContent = t.sucWelcome;
+  document.getElementById('suc-body').innerHTML = t.sucBody;
+  document.getElementById('suc-notif-title').textContent = t.sucNotifTitle;
+  document.getElementById('suc-wait').innerHTML = t.sucWait;
+  document.getElementById('btn-newcheckin').textContent = t.btnNewCheckin;
+  goTo('screen-welcome');
+}
+
+// Wire up language buttons via addEventListener for iOS Safari compatibility
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('lang-en').addEventListener('click', function() { selectLang('en'); });
+  document.getElementById('lang-es').addEventListener('click', function() { selectLang('es'); });
+  document.getElementById('lang-zh').addEventListener('click', function() { selectLang('zh'); });
+  document.getElementById('btn-lang-continue').addEventListener('click', function() { confirmLang(); });
+  // Pre-highlight English as default
+  selectLang('en');
+});
+
+// Navigation
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+// Camera
+function openCamera(side) {
+  camTarget = side;
+  const t = T[lang];
+  document.getElementById('cam-title').textContent = side === 'front' ? t.camFront : t.camBack;
+  document.getElementById('cam-guide-label').textContent = t.camGuide;
+  document.getElementById('cam-cancel-btn').textContent = t.camCancel;
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    document.getElementById('file-' + side).click();
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+  }).then(stream => {
+    camStream = stream;
+    const video = document.getElementById('cam-video');
+    video.srcObject = stream;
+    document.getElementById('cam-modal').classList.add('open');
+  }).catch(() => {
+    document.getElementById('file-' + side).click();
+  });
+}
+
+function closeCamera() {
+  if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+  document.getElementById('cam-modal').classList.remove('open');
+}
+
+function capturePhoto() {
+  const video = document.getElementById('cam-video');
+  const canvas = document.getElementById('cam-canvas');
+  canvas.width = video.videoWidth || 1280;
+  canvas.height = video.videoHeight || 720;
+  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  storePhoto(camTarget, canvas.toDataURL('image/jpeg', 0.85));
+  closeCamera();
+}
+
+function handleFileCapture(side, input) {
+  if (!input.files || !input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => storePhoto(side, e.target.result);
+  reader.readAsDataURL(input.files[0]);
+}
+
+function storePhoto(side, dataUrl) {
+  const t = T[lang];
+  if (side === 'front') data.idFront = dataUrl;
+  else data.idBack = dataUrl;
+  const slot = document.getElementById('slot-' + side);
+  slot.classList.add('captured');
+  slot.innerHTML = `<img src="${dataUrl}" alt="${side}"><div class="captured-badge">${t.captured}</div><button class="retake-btn" onclick="event.stopPropagation();retakePhoto('${side}')">${t.retake}</button>`;
+  slot.onclick = null;
+  document.getElementById('err-photos').classList.remove('show');
+}
+
+function retakePhoto(side) {
+  const t = T[lang];
+  if (side === 'front') data.idFront = null; else data.idBack = null;
+  const slot = document.getElementById('slot-' + side);
+  slot.classList.remove('captured');
+  slot.innerHTML = `<div class="slot-icon">📷</div><div class="slot-label">${side === 'front' ? t.lblFront : t.lblBack}</div>`;
+  slot.onclick = () => openCamera(side);
+}
+
+// Visit type
+function selectType(type) {
+  data.type = type;
+  document.getElementById('btn-delivery').classList.toggle('selected', type === 'delivery');
+  document.getElementById('btn-pickup').classList.toggle('selected', type === 'pickup');
+  document.getElementById('err-type').classList.remove('show');
+}
+
+// Time chips
+function buildTimeChips() {
+  const grid = document.getElementById('time-grid');
+  grid.innerHTML = '';
+  const now = new Date(), base = new Date(now);
+  base.setMinutes(0,0,0);
+  const slots = [];
+  for (let i = -1; i <= 10; i++) {
+    const t = new Date(base.getTime() + i * 30 * 60000);
+    if (t.getHours() >= 5 && t.getHours() <= 21) {
+      const h = t.getHours(), m = t.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM', hh = h % 12 === 0 ? 12 : h % 12;
+      slots.push({ label: hh + ':' + String(m).padStart(2,'0') + ' ' + ampm });
+    }
+  }
+  slots.slice(0,9).forEach(s => {
+    const chip = document.createElement('div');
+    chip.className = 'time-chip'; chip.textContent = s.label;
+    chip.onclick = () => { document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected')); chip.classList.add('selected'); data.time = s.label; document.getElementById('custom-time').value = ''; };
+    grid.appendChild(chip);
+  });
+}
+buildTimeChips();
+
+document.getElementById('custom-time').addEventListener('change', function() {
+  if (this.value) {
+    document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+    const [h, m] = this.value.split(':'), hour = parseInt(h);
+    data.time = (hour % 12 === 0 ? 12 : hour % 12) + ':' + m + ' ' + (hour >= 12 ? 'PM' : 'AM');
+  }
+});
+
+// Validation
+function validateStep1() {
+  const t = T[lang]; let ok = true;
+  const name = document.getElementById('driver-name').value.trim();
+  if (!name) { document.getElementById('err-name').classList.add('show'); ok = false; }
+  else { document.getElementById('err-name').classList.remove('show'); data.name = name; }
+  if (!data.idFront || !data.idBack) { document.getElementById('err-photos').classList.add('show'); ok = false; }
+  else { document.getElementById('err-photos').classList.remove('show'); }
+  if (ok) goTo('screen-step2');
+}
+
+function validateStep2() {
+  if (!data.type) { document.getElementById('err-type').classList.add('show'); return; }
+  goTo('screen-step3');
+}
+
+function validateStep3() {
+  let ok = true;
+  const carrier = document.getElementById('carrier').value.trim(), po = document.getElementById('po-number').value.trim();
+  const city = document.getElementById('dest-city').value.trim(), state = document.getElementById('dest-state').value.trim();
+  if (!carrier) { document.getElementById('err-carrier').classList.add('show'); ok = false; }
+  else { document.getElementById('err-carrier').classList.remove('show'); data.carrier = carrier; }
+  if (!po) { document.getElementById('err-po').classList.add('show'); ok = false; }
+  else { document.getElementById('err-po').classList.remove('show'); data.po = po; }
+  if (!city || !state) { document.getElementById('err-destination').classList.add('show'); ok = false; }
+  else { document.getElementById('err-destination').classList.remove('show'); data.destCity = city; data.destState = state.toUpperCase(); }
+  if (ok) goTo('screen-step4');
+}
+
+// Appointment yes/no
+function selectAppt(choice) {
+  data.hasAppt = choice;
+  document.getElementById('btn-appt-yes').classList.toggle('selected', choice === 'yes');
+  document.getElementById('btn-appt-no').classList.toggle('selected', choice === 'no');
+  document.getElementById('err-hasappt').classList.remove('show');
+  const section = document.getElementById('time-picker-section');
+  section.style.display = choice === 'yes' ? 'block' : 'none';
+  // Clear time if switching to no
+  if (choice === 'no') {
+    data.time = '';
+    document.getElementById('custom-time').value = '';
+    document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+  }
+}
+
+function goToReview() {
+  const t = T[lang];
+  // Validate appointment selection
+  if (data.hasAppt === null) { document.getElementById('err-hasappt').classList.add('show'); return; }
+  document.getElementById('err-hasappt').classList.remove('show');
+  // If yes, require a time
+  if (data.hasAppt === 'yes' && !data.time) { document.getElementById('err-time').classList.add('show'); return; }
+  document.getElementById('err-time').classList.remove('show');
+
+  document.getElementById('rv-name').textContent = data.name;
+  const imgs = document.getElementById('rv-id-imgs'); imgs.innerHTML = '';
+  [data.idFront, data.idBack].forEach(src => { if (src) { const img = document.createElement('img'); img.src = src; imgs.appendChild(img); } });
+  const badge = document.createElement('span');
+  badge.className = 'type-badge ' + data.type;
+  badge.textContent = data.type === 'delivery' ? t.deliveryBadge : t.pickupBadge;
+  const rvType = document.getElementById('rv-type'); rvType.innerHTML = ''; rvType.appendChild(badge);
+  document.getElementById('rv-carrier').textContent = data.carrier;
+  document.getElementById('rv-po').textContent = data.po;
+  document.getElementById('rv-dest').textContent = data.destCity + ', ' + data.destState;
+  document.getElementById('rv-time').textContent = data.hasAppt === 'yes' ? data.time : t.lblApptNo;
+  goTo('screen-review');
+}
+
+function submitCheckin() {
+  const t = T[lang], now = new Date();
+  const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const apptDisplay = data.hasAppt === 'yes' ? data.time : t.lblApptNo;
+
+  document.getElementById('success-name').textContent = data.name;
+  document.getElementById('notify-detail').textContent =
+    (data.type === 'delivery' ? t.deliveryBadge : t.pickupBadge) + ' — ' + data.carrier +
+    ' — PO: ' + data.po + ' — To: ' + data.destCity + ', ' + data.destState +
+    ' — ' + apptDisplay + ' — ' + timeStr;
+
+  // Send Teams notification
+  if (TEAMS_WEBHOOK_URL) {
+    const card = {
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": "7a0a0a",
+      "summary": "Driver Check-In: " + data.name,
+      "sections": [{
+        "activityTitle": "🚛 Driver Check-In — " + data.name,
+        "activitySubtitle": "Checked in at " + timeStr,
+        "facts": [
+          { "name": "Visit Type", "value": data.type === 'delivery' ? '📦 Delivery' : '🚛 Pickup' },
+          { "name": "Carrier", "value": data.carrier },
+          { "name": "PO / Load #", "value": data.po },
+          { "name": "Destination", "value": data.destCity + ', ' + data.destState },
+          { "name": "Appointment", "value": apptDisplay },
+          { "name": "Driver ID", "value": "On file (photo captured)" }
+        ]
+      }]
+    };
+    fetch(TEAMS_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(card)
+    }).catch(() => {}); // fail silently — check-in still completes
+  }
+
+  goTo('screen-success');
+  setTimeout(resetApp, 90000);
+}
+
+function resetApp() {
+  data.name = ''; data.type = ''; data.carrier = ''; data.po = ''; data.destCity = ''; data.destState = ''; data.hasAppt = null; data.time = '';
+  data.idFront = null; data.idBack = null;
+  document.getElementById('driver-name').value = '';
+  document.getElementById('carrier').value = '';
+  document.getElementById('po-number').value = '';
+  document.getElementById('dest-city').value = '';
+  document.getElementById('dest-state').value = '';
+  document.getElementById('custom-time').value = '';
+  document.getElementById('btn-delivery').classList.remove('selected');
+  document.getElementById('btn-pickup').classList.remove('selected');
+  document.getElementById('btn-appt-yes').classList.remove('selected');
+  document.getElementById('btn-appt-no').classList.remove('selected');
+  document.getElementById('time-picker-section').style.display = 'none';
+  document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+  ['front','back'].forEach(side => retakePhoto(side));
+  buildTimeChips();
+  goTo('screen-lang');
+}
+</script>
+</body>
+</html>
